@@ -1,15 +1,15 @@
 blueprint:
-  name: Link Multiple Switches
-  description: '## Link multiple switches together v1.0.1
+  name: Link Multiple Switches - Timed
+  description: '## Link multiple switches together v1.0.1 and Timer to switch off
 
 
     Select multiple switch entities to link their on/off state.  If any selected switch
     entity is turned on or off, the other selected entities will be sent a matching
     on or off command.
 
+    It fires a timer to switch off the light. You should add the timer and its automation.
 
     Requires Home Assistant 2022.5.0 or newer.
-
     Credit to @adchevrier for the initial blueprint: https://community.home-assistant.io/t/synchronize-the-on-off-state-of-2-entities/259010
 
     Credit to @Hebus for this fantastic template: https://community.home-assistant.io/t/synchronize-the-on-off-state-of-2-entities/259010/38
@@ -28,7 +28,7 @@ blueprint:
           min: 0
           max: 3600
           unit_of_measurement: seconds
-    timer:
+    countdown:
       name: Timer
       selector:
         entity:
@@ -40,7 +40,7 @@ blueprint:
         entity:
           domain: switch
           multiple: true
-  source_url: https://gist.github.com/aderusha/4f25658dbb855675b5b5ccf296fd801b
+  source_url: https://raw.githubusercontent.com/msavazzi/homeassistant_blueprints/main/link_multiple_switches_timer.yaml
 mode: queued
 max_exceeded: silent
 variables:
@@ -55,8 +55,17 @@ condition:
   value_template: '{{ trigger.to_state.state != "unknown" }}'
 - condition: template
   value_template: '{{ trigger.to_state.state != "unavailable" }}'
+- condition: template
+  value_template: '{{trigger.to_state.context.parent_id is none or (trigger.to_state.context.id != this.context.id and trigger.to_state.context.parent_id != this.context.id) }}'
 action:
 - service: homeassistant.turn_{{ trigger.to_state.state }}
   target:
     entity_id: '{{ expand(switches) | selectattr("entity_id", "!=", trigger.entity_id)
       | map(attribute="entity_id") | list }}'
+- condition: template
+  value_template: '{{ trigger.to_state.state == "on" }}'
+- service: timer.start
+  data:
+    duration: !input timeout
+  target:
+    entity_id: !input countdown

@@ -25,7 +25,7 @@ blueprint:
         entity:
           domain: switch
           multiple: true
-  source_url: https://gist.github.com/aderusha/4f25658dbb855675b5b5ccf296fd801b
+  source_url: https://raw.githubusercontent.com/msavazzi/homeassistant_blueprints/main/link_multiple_switches.yaml
 mode: queued
 max_exceeded: silent
 variables:
@@ -40,6 +40,8 @@ condition:
   value_template: '{{ trigger.to_state.state != "unknown" }}'
 - condition: template
   value_template: '{{ trigger.to_state.state != "unavailable" }}'
+- condition: template
+  value_template: '{{trigger.to_state.context.parent_id is none or (trigger.to_state.context.id != this.context.id and trigger.to_state.context.parent_id != this.context.id) }}'
 action:
 - service: homeassistant.turn_{{ trigger.to_state.state }}
   target:
