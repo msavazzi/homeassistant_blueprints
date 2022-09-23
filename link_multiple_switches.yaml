@@ -1,0 +1,62 @@
+blueprint:
+  name: Link Multiple Switches
+  description: '## Link multiple switches together v1.0.1
+
+
+    Select multiple switch entities to link their on/off state.  If any selected switch
+    entity is turned on or off, the other selected entities will be sent a matching
+    on or off command.
+
+
+    Requires Home Assistant 2022.5.0 or newer.
+
+    Credit to @adchevrier for the initial blueprint: https://community.home-assistant.io/t/synchronize-the-on-off-state-of-2-entities/259010
+
+    Credit to @Hebus for this fantastic template: https://community.home-assistant.io/t/synchronize-the-on-off-state-of-2-entities/259010/38
+
+    '
+  domain: automation
+  homeassistant:
+    min_version: 2022.5.0
+  input:
+    timeout:
+      name: timeout for light
+      description: Time to leave the light on after last motion is detected.
+      default: 120
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+    timer:
+      name: Timer
+      selector:
+        entity:
+          domain: timer
+          multiple: false
+    switches:
+      name: Switch Entites
+      selector:
+        entity:
+          domain: switch
+          multiple: true
+  source_url: https://gist.github.com/aderusha/4f25658dbb855675b5b5ccf296fd801b
+mode: queued
+max_exceeded: silent
+variables:
+  switches: !input switches
+trigger:
+- platform: state
+  entity_id: !input switches
+condition:
+- condition: template
+  value_template: '{{ trigger.to_state.state != trigger.from_state.state }}'
+- condition: template
+  value_template: '{{ trigger.to_state.state != "unknown" }}'
+- condition: template
+  value_template: '{{ trigger.to_state.state != "unavailable" }}'
+action:
+- service: homeassistant.turn_{{ trigger.to_state.state }}
+  target:
+    entity_id: '{{ expand(switches) | selectattr("entity_id", "!=", trigger.entity_id)
+      | map(attribute="entity_id") | list }}'
