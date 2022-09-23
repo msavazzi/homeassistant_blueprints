@@ -19,6 +19,21 @@ blueprint:
   homeassistant:
     min_version: 2022.5.0
   input:
+    timeout:
+      name: timeout for light
+      description: Time to leave the light on after last motion is detected.
+      default: 120
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+    timer:
+      name: Timer
+      selector:
+        entity:
+          domain: timer
+          multiple: false
     switches:
       name: Switch Entites
       selector:
